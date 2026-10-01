@@ -1,0 +1,664 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>Simulateur d'aides numériques</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Mise en page d'outil : questionnaire à gauche, verdicts à droite (empilés sur téléphone), couleurs du portfolio. */
+:root {
+  --bg: #f4f6fb; --grid: #e3e8f2; --surface: #ffffffd9; --surface-2: #eef2f9; --border: #d5dcea;
+  --fg: #0e1626; --muted: #55627d; --primary: #3f63e0; --ok: #0f8f7d; --warn: #b7791f; --ko: #c2413a;
+  --ok-bg: #0f8f7d1a; --warn-bg: #b7791f1f; --ko-bg: #c2413a17;
+  --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b1220; --grid: #16213a; --surface: #111a2bd9; --surface-2: #161f31; --border: #243250;
+  --fg: #e6eaf2; --muted: #a3b1cc; --primary: #7c9bff; --ok: #5eead4; --warn: #f5b84b; --ko: #f97066;
+  --ok-bg: #5eead41a; --warn-bg: #f5b84b1a; --ko-bg: #f970661a; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0b1220; --grid: #16213a; --surface: #111a2bd9; --surface-2: #161f31; --border: #243250;
+  --fg: #e6eaf2; --muted: #a3b1cc; --primary: #7c9bff; --ok: #5eead4; --warn: #f5b84b; --ko: #f97066;
+  --ok-bg: #5eead41a; --warn-bg: #f5b84b1a; --ko-bg: #f970661a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background-color: var(--bg); color: var(--fg); font: 15px/1.55 var(--sans);
+  background-image: linear-gradient(to right, var(--grid) 1px, transparent 1px), linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 88px; display: grid; gap: 20px; }
+header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; }
+h1 { font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.15; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.lede { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+button { font: inherit; font-weight: 600; font-size: 14px; border-radius: 8px; padding: 8px 14px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--fg); }
+button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.cols { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; backdrop-filter: blur(4px); min-width: 0; }
+.box h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 14px; font-weight: 600; }
+form { display: grid; gap: 18px; }
+fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; }
+legend { font-weight: 700; padding: 0; margin-bottom: 4px; }
+.row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; row-gap: 14px; grid-auto-rows: auto; }
+.row > label { grid-row: span 3; display: grid; grid-template-rows: subgrid; row-gap: 5px; }
+@media (max-width: 480px) { .row { grid-template-columns: minmax(0, 1fr); } }
+label { font-size: 13.5px; font-weight: 500; min-width: 0; }
+.lt { align-self: end; }
+.hint { font-size: 12.5px; color: var(--muted); font-weight: 400; }
+.hint:empty { display: none; }
+input, select, textarea { font: inherit; width: 100%; height: 42px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--fg); font-variant-numeric: tabular-nums; }
+textarea { height: auto; padding: 9px 10px; resize: vertical; font-size: 13px; }
+.siren { background: var(--surface-2); border: 1px dashed var(--border) !important; border-radius: 10px; padding: 14px !important; }
+.siren-line { display: flex; flex-wrap: wrap; gap: 8px; }
+.siren-line input { flex: 1 1 180px; width: auto; background: var(--bg); }
+.siren textarea { background: var(--bg); }
+.btn { display: inline-flex; align-items: center; height: 42px; padding: 0 14px; border-radius: 8px; font-weight: 600; font-size: 14px;
+  text-decoration: none; background: var(--fg); color: var(--bg); border: 1px solid var(--fg); }
+.btn.ghost { background: transparent; color: var(--fg); border-color: var(--border); }
+.btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+.steps { margin: 0; padding-left: 20px; font-size: 13px; color: var(--muted); display: grid; gap: 2px; }
+.secours { display: grid; gap: 8px; }
+.secours a { color: var(--primary); }
+.siren-msg { font-size: 13px; display: grid; gap: 4px; }
+.siren-msg.ok { color: var(--ok); } .siren-msg.err { color: var(--ko); }
+.siren-msg ul { margin: 0; padding-left: 18px; color: var(--muted); }
+.example { display: inline-flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--warn); }
+.results { display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+@media (max-width: 860px) { .results { position: static; } }
+.aide { display: grid; gap: 10px; border-left: 3px solid var(--border); }
+.aide[data-v="possible"] { border-left-color: var(--ok); }
+.aide[data-v="a_verifier"] { border-left-color: var(--warn); }
+.aide[data-v="pas_possible"] { border-left-color: var(--ko); }
+.aide-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.aide-top h3 { margin: 0; font-size: 1.15rem; }
+.org { color: var(--muted); font-size: 13px; }
+.pill { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.pill.possible { color: var(--ok); background: var(--ok-bg); }
+.pill.a_verifier { color: var(--warn); background: var(--warn-bg); }
+.pill.pas_possible { color: var(--ko); background: var(--ko-bg); }
+.amount { font: 500 1.6rem/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+.amount small { font: 400 12.5px var(--sans); color: var(--muted); display: block; margin-top: 4px; }
+.aide ul, .aide ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.aide p { margin: 0; }
+.muted { color: var(--muted); font-size: 13.5px; }
+details summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+details[open] summary { margin-bottom: 8px; }
+.src { font-size: 12.5px; color: var(--muted); }
+.src a { color: var(--primary); }
+.conseils { display: grid; gap: 8px; margin: 0; padding-left: 20px; }
+.recap { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.recap span:nth-child(even) { text-align: right; font-family: var(--mono); }
+pre { white-space: pre-wrap; word-break: break-word; font: 12.5px/1.5 var(--mono); background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px; margin: 0 0 10px; max-height: 260px; overflow: auto; }
+.contact { display: grid; gap: 8px; }
+.contact-line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.contact-line code { font-family: var(--mono); font-size: 13.5px; user-select: all; overflow-wrap: anywhere; }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--surface-2); border-top: 1px solid var(--border); font-size: 13px; text-align: center; color: var(--fg); z-index: 5; }
+.bar strong { color: var(--warn); }
+@media (prefers-reduced-motion: no-preference) { .aide { transition: border-color .2s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Quelles aides pour votre projet numérique ?</h1>
+      <p class="lede">Répondez aux questions : le simulateur indique, pour chaque aide, si elle est possible, combien elle pourrait financer et quoi faire, dans l'ordre. Rien n'est enregistré ni envoyé.</p>
+    </div>
+    <div class="actions">
+      <button type="button" id="reset">Recommencer à zéro</button>
+    </div>
+  </header>
+
+  <div class="cols">
+    <section class="box" aria-labelledby="t-q">
+      <h2 id="t-q">Votre entreprise et votre projet</h2>
+      <p class="example" id="example-flag">Exemple pré-rempli : remplacez par vos réponses.</p>
+      <form id="f" novalidate>
+        <fieldset class="siren">
+          <legend>Remplir avec le numéro SIREN</legend>
+          <div class="siren-line">
+            <input id="siren" type="text" inputmode="numeric" maxlength="17" placeholder="SIREN (9 chiffres) ou SIRET (14)" aria-label="Numéro SIREN ou SIRET">
+            <a class="btn ghost" id="lien-fiche" href="https://annuaire-entreprises.data.gouv.fr" target="_blank" rel="noopener" aria-disabled="true">Voir la fiche officielle</a>
+          </div>
+          <p class="hint">Les réponses sur l'entreprise se remplissent dès que le numéro est complet, à partir des données publiques de l'État.</p>
+          <div id="secours" class="secours" hidden>
+            <p class="hint">Les données n'ont pas pu être chargées depuis cette page. Remplissage manuel en trois étapes :</p>
+            <ol class="steps">
+              <li><a id="lien-donnees" href="https://recherche-entreprises.api.gouv.fr" target="_blank" rel="noopener">Ouvrir les données de l'entreprise</a> (une page de l'État s'ouvre).</li>
+              <li>Sur cette page, sélectionnez tout (Ctrl+A ou Cmd+A) et copiez (Ctrl+C ou Cmd+C).</li>
+              <li>Collez ci-dessous.</li>
+            </ol>
+            <textarea id="colle" rows="2" placeholder="Collez ici les données copiées" aria-label="Données officielles copiées"></textarea>
+          </div>
+          <div id="siren-msg" class="siren-msg" role="status" hidden></div>
+        </fieldset>
+        <fieldset>
+          <legend>L'entreprise</legend>
+          <div class="row">
+            <label for="idf"><span class="lt">Où est-elle établie ?</span><select id="idf"><option value="oui">Île-de-France</option><option value="non">Autre région</option><option value="nsp">Je ne sais pas</option></select><span class="hint"></span></label>
+            <label for="salaries"><span class="lt">Nombre de salariés</span><input id="salaries" type="number" min="0" step="1" inputmode="numeric"><span class="hint">Le président de SAS compte, le gérant majoritaire de SARL non. Vide = je ne sais pas.</span></label>
+            <label for="ca"><span class="lt">Chiffre d'affaires du dernier exercice (€ HT)</span><input id="ca" type="number" min="0" step="1000" inputmode="numeric"><span class="hint">Vide = je ne sais pas.</span></label>
+            <label for="anciennete"><span class="lt">Ancienneté</span><select id="anciennete"><option value="0.5">Moins d'un an</option><option value="2">1 à 3 ans</option><option value="4">Plus de 3 ans</option><option value="nsp">Je ne sais pas</option></select><span class="hint"></span></label>
+            <label for="exercice"><span class="lt">Un premier exercice comptable est-il clos ?</span><select id="exercice"><option value="oui">Oui</option><option value="non">Non</option><option value="nsp">Je ne sais pas</option></select><span class="hint"></span></label>
+            <label for="secteur"><span class="lt">Secteur d'activité</span><select id="secteur"></select><span class="hint"></span></label>
+            <label for="aides3ans"><span class="lt">Aides publiques reçues ces 3 dernières années</span><select id="aides3ans"><option value="0">Aucune, ou moins de 300 000 €</option><option value="310000">Plus de 300 000 €</option><option value="nsp">Je ne sais pas</option></select><span class="hint"></span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Le projet, par type de dépense (€ HT)</legend>
+          <div class="row">
+            <label for="dev"><span class="lt">Développement livré</span><input id="dev" type="number" min="0" step="500" inputmode="numeric"><span class="hint">Site, logiciel, outil, bot ou automatisation facturés une fois.</span></label>
+            <label for="abonnement"><span class="lt">Abonnements et maintenance</span><input id="abonnement" type="number" min="0" step="100" inputmode="numeric"><span class="hint">Total sur la durée du projet.</span></label>
+            <label for="conseilJours"><span class="lt">Conseil : nombre de jours</span><input id="conseilJours" type="number" min="0" step="0.5" inputmode="decimal"><span class="hint"></span></label>
+            <label for="conseilTarif"><span class="lt">Conseil : prix par jour</span><input id="conseilTarif" type="number" min="0" step="50" inputmode="numeric"><span class="hint"></span></label>
+            <label for="formation"><span class="lt">Formation</span><input id="formation" type="number" min="0" step="100" inputmode="numeric"><span class="hint"></span></label>
+            <label for="signe"><span class="lt">Montant déjà signé</span><input id="signe" type="number" min="0" step="500" inputmode="numeric"><span class="hint">Devis signés ou acomptes versés.</span></label>
+          </div>
+        </fieldset>
+      </form>
+    </section>
+
+    <section class="results" aria-labelledby="t-r" aria-live="polite">
+      <div class="box">
+        <h2 id="t-r">Vos dépenses</h2>
+        <div class="recap" id="recap"></div>
+      </div>
+      <div id="aides" class="results-list" style="display:grid;gap:14px"></div>
+      <div class="box" id="conseils-box">
+        <h2>Conseils pour votre dossier</h2>
+        <ul class="conseils" id="conseils"></ul>
+      </div>
+      <div class="box">
+        <h2>Votre résumé</h2>
+        <pre id="resume"></pre>
+        <button type="button" class="primary" id="copy">Copier le résumé</button>
+        <span class="muted" id="copy-msg" role="status"></span>
+      </div>
+      <div class="box contact">
+        <h2>Préparer votre plan en lots</h2>
+        <p class="muted">Je suis Cédric Gicquiaud, product builder IA en Île-de-France. Je prépare avec vous la feuille de route en lots qui sert de base au dossier, puis je réalise les lots.</p>
+        <div class="contact-line"><code id="mail">cedric.gicquiaud@gmail.com</code><button type="button" data-copy="mail">Copier l'adresse</button></div>
+        <div class="contact-line"><a href="https://www.linkedin.com/in/cedric-gicquiaud" target="_blank" rel="noopener">linkedin.com/in/cedric-gicquiaud</a></div>
+      </div>
+    </section>
+  </div>
+</div>
+<div class="bar"><strong>Estimation</strong> — c'est la Région (ou Bpifrance) qui décide. Vérifiez toujours auprès de l'organisme avant de signer.</div>
+
+<script>
+// Données des aides montrées au client (WAT-1).
+// Seules les aides où Cédric peut être le prestataire figurent ici (décision 3 du cadrage).
+// Sources relues le 01/10/2026 : règlement TP'up CP 2023-340 rév. 01/2024 et guide 04/2024,
+// règlement PM'up 09/2025, Bpifrance (Prêt Boost). Catalogue complet : aides/fiche-aides.md.
+
+const VERIFIE_LE = "2026-10-01";
+
+const SECTEURS = [
+  { id: "commerce_detail", nom: "Commerce de détail (boutique, vente aux particuliers)", statut: "ok" },
+  { id: "artisanat", nom: "Artisanat, fabrication", statut: "ok" },
+  { id: "industrie", nom: "Industrie", statut: "ok" },
+  { id: "btp", nom: "Bâtiment, travaux", statut: "ok" },
+  { id: "diagnostic_immobilier", nom: "Diagnostic immobilier", statut: "ambigu",
+    note: "Le règlement exclut l'immobilier et les professions réglementées ; un diagnostiqueur n'est pas clairement visé." },
+  { id: "negoce", nom: "Négoce (commerce de gros, achat-revente entre entreprises)", statut: "exclu" },
+  { id: "conseil", nom: "Conseil", statut: "exclu" },
+  { id: "liberal", nom: "Profession libérale ou réglementée (avocat, médecin, expert-comptable…)", statut: "exclu" },
+  { id: "finance", nom: "Banque, finance, assurance", statut: "exclu" },
+  { id: "immobilier", nom: "Agence immobilière, gestion de biens, SCI", statut: "exclu" },
+  { id: "chr", nom: "Café, hôtel, restaurant", statut: "exclu" },
+  { id: "formation", nom: "Formation", statut: "exclu" },
+  { id: "numerique", nom: "Services numériques (ESN, maintenance informatique)", statut: "exclu" },
+  { id: "communication", nom: "Communication, marketing, agence web", statut: "exclu" },
+  { id: "services_personne", nom: "Services à la personne", statut: "exclu" },
+  { id: "logistique", nom: "Transport de marchandises, logistique", statut: "exclu" },
+  { id: "agriculture", nom: "Agriculture", statut: "exclu" },
+  { id: "autre", nom: "Autre activité", statut: "ambigu", note: "Activité à faire classer par la Région." },
+];
+
+const AIDES = [
+  {
+    id: "tpup",
+    nom: "TP'up",
+    organisme: "Région Île-de-France",
+    nature: "subvention",
+    resume: "Finance une partie d'un plan de développement de 12 à 18 mois pour les très petites entreprises.",
+    conditions: [
+      "Entreprise établie en Île-de-France",
+      "1 à 9 salariés",
+      "Chiffre d'affaires de 2 M€ au plus",
+      "Au moins 1 an d'existence et 1 exercice comptable clos",
+      "Secteur non exclu",
+      "Aucun devis signé avant le dépôt du dossier",
+    ],
+    salaries: { min: 1, max: 9 },
+    caMax: 2_000_000,
+    ancienneteMin: 1,
+    idf: true,
+    taux: { investissement: 0.3, investissementBonifie: 0.5, conseil: 0.5 },
+    aideConseilParJourMax: 500,
+    plafond: 55_000,
+    plafondConseil: 25_000,
+    bonification:
+      "Le taux des développements peut monter à 50 % si l'entreprise est en zone de reconquête économique, ou si le projet a un fort impact écologique.",
+    demarches: [
+      "Ne signer aucun devis et ne verser aucun acompte avant le dépôt : une dépense engagée avant n'est plus finançable.",
+      "Écrire le plan de 12 à 18 mois en lots datés et chiffrés, avec les devis non signés. Le plan doit contenir un volet « transition écologique ».",
+      "Déposer le dossier sur mesdemarches.iledefrance.fr (dépôt possible toute l'année).",
+      "Recevoir la visite de diagnostic de la Région.",
+      "Attendre la décision du comité (il se réunit chaque mois).",
+      "Signer les devis et lancer les lots prévus dans le plan.",
+      "Garder les factures acquittées, et le rapport de fin de mission pour le conseil : ils servent au versement.",
+    ],
+    source: { nom: "Région Île-de-France — TP'up", url: "https://www.iledefrance.fr/aides-et-appels-a-projets/tpup" },
+    verifieLe: VERIFIE_LE,
+  },
+  {
+    id: "pmup",
+    nom: "PM'up",
+    organisme: "Région Île-de-France",
+    nature: "subvention",
+    resume: "Finance une partie d'un plan de développement sur 3 ans pour les PME.",
+    conditions: [
+      "Entreprise établie en Île-de-France",
+      "5 à 249 salariés",
+      "Chiffre d'affaires de 50 M€ au plus",
+      "Secteur non exclu",
+      "Aucun devis signé avant le dépôt du dossier",
+    ],
+    salaries: { min: 5, max: 249 },
+    caMax: 50_000_000,
+    ancienneteMin: 0,
+    idf: true,
+    taux: { investissementPetite: 0.2, investissementGrande: 0.1, seuilPetite: 50, investissementBonifie: 0.5, conseil: 0.5 },
+    plafond: 250_000,
+    bonification: "Le taux des développements peut monter à 50 % si l'entreprise est en zone de reconquête économique.",
+    demarches: [
+      "Ne signer aucun devis avant le dépôt : une dépense engagée avant n'est plus finançable.",
+      "Écrire le plan de développement sur 3 ans, en lots datés et chiffrés, avec les devis non signés.",
+      "Déposer le dossier sur mesdemarches.iledefrance.fr (dépôt possible toute l'année).",
+      "Attendre l'instruction et la décision de la Région.",
+      "Signer les devis et lancer les lots prévus.",
+      "Garder les factures acquittées : elles servent au versement.",
+    ],
+    source: { nom: "Région Île-de-France — PM'up", url: "https://www.iledefrance.fr/aides-et-appels-a-projets/pmup" },
+    verifieLe: VERIFIE_LE,
+  },
+  {
+    id: "pretboost",
+    nom: "Prêt Boost",
+    organisme: "Bpifrance",
+    nature: "pret",
+    resume: "Un prêt (pas une subvention) de 5 000 à 75 000 € pour financer un projet numérique, sans garantie personnelle.",
+    conditions: [
+      "Entreprise en France",
+      "2 à 49 salariés",
+      "Plus de 3 ans d'existence",
+      "Projet de 5 000 € au moins",
+    ],
+    salaries: { min: 2, max: 49 },
+    ancienneteMin: 3,
+    montantMin: 5_000,
+    montantMax: 75_000,
+    demarches: [
+      "Faire la demande en ligne sur flash.bpifrance.fr.",
+      "Joindre les devis du projet.",
+      "Réponse annoncée sous 48 heures ; le prêt se rembourse sur 3 à 5 ans.",
+    ],
+    source: { nom: "Bpifrance — Prêt Boost", url: "https://flash.bpifrance.fr" },
+    verifieLe: VERIFIE_LE,
+  },
+];
+
+const PLAFOND_MINIMIS = 300_000;
+const SEUIL_PETIT_PROJET = 10_000;
+
+// Moteur du simulateur (WAT-2) : réponses du client → verdict et montant estimé par aide.
+// Pur : aucune requête réseau, aucun accès à la page. Montants HT, en euros.
+
+
+const QUI_COMPTE =
+  "Comptent comme salariés les personnes en contrat de travail, dont le président de SAS ; le gérant majoritaire de SARL ne compte pas.";
+
+const euros = (n) => `${Math.round(n).toLocaleString("fr-FR")} €`;
+const inconnu = (v) => v === null || v === undefined;
+
+// Les dépenses déjà signées sont retirées d'abord du développement, puis du conseil.
+function depenses(r) {
+  const conseilBrut = (r.conseilJours || 0) * (r.conseilTarif || 0);
+  let signe = r.montantSigne || 0;
+  const dev = Math.max(0, (r.dev || 0) - signe);
+  signe = Math.max(0, signe - (r.dev || 0));
+  const conseil = Math.max(0, conseilBrut - signe);
+  const jours = conseilBrut > 0 ? (r.conseilJours || 0) * (conseil / conseilBrut) : 0;
+  const nonEligible = (r.abonnement || 0) + (r.formation || 0);
+  return { dev, conseil, jours, nonEligible, total: (r.dev || 0) + conseilBrut + nonEligible };
+}
+
+function controle(aide, r) {
+  const pas = [];
+  const verif = [];
+  if (aide.idf) {
+    if (r.idf === false) pas.push("L'entreprise n'est pas établie en Île-de-France.");
+    else if (inconnu(r.idf)) verif.push("Où l'entreprise est établie (Île-de-France ou non).");
+  }
+  if (inconnu(r.salaries)) verif.push("Le nombre de salariés. " + QUI_COMPTE);
+  else if (r.salaries === 0) pas.push("Aucun salarié. " + QUI_COMPTE);
+  else if (r.salaries < aide.salaries.min) pas.push(`Moins de ${aide.salaries.min} salariés.`);
+  else if (r.salaries > aide.salaries.max) pas.push(`Plus de ${aide.salaries.max} salariés.`);
+  if (aide.caMax) {
+    if (inconnu(r.ca)) verif.push("Le chiffre d'affaires du dernier exercice.");
+    else if (r.ca > aide.caMax) pas.push(`Chiffre d'affaires supérieur à ${euros(aide.caMax)}.`);
+  }
+  if (aide.ancienneteMin) {
+    if (inconnu(r.anciennete)) verif.push("L'ancienneté de l'entreprise.");
+    else if (r.anciennete < aide.ancienneteMin)
+      pas.push(aide.ancienneteMin === 1 ? "Moins d'un an d'existence." : `Moins de ${aide.ancienneteMin} ans d'existence.`);
+  }
+  if (aide.id === "tpup") {
+    if (r.exerciceClos === false) pas.push("Aucun exercice comptable clos.");
+    else if (inconnu(r.exerciceClos)) verif.push("Si un premier exercice comptable est clos.");
+  }
+  if (aide.idf) {
+    const s = SECTEURS.find((x) => x.id === r.secteur);
+    if (!s) verif.push("Le secteur d'activité.");
+    else if (s.statut === "exclu") pas.push(`Secteur exclu : ${s.nom}.`);
+    else if (s.statut === "ambigu") verif.push(`Secteur « ${s.nom} » : à faire confirmer par écrit par la Région. ${s.note || ""}`.trim());
+    if (inconnu(r.aides3ans)) verif.push("Le montant des aides publiques reçues ces 3 dernières années (plafond de 300 000 €).");
+    else if (r.aides3ans > PLAFOND_MINIMIS)
+      verif.push("Plus de 300 000 € d'aides publiques reçues sur 3 ans : le plafond européen est peut-être atteint.");
+  }
+  return { pas, verif };
+}
+
+function montantRegion(aide, r, d) {
+  let tauxInv = aide.taux.investissement;
+  if (aide.id === "pmup") tauxInv = !inconnu(r.salaries) && r.salaries >= aide.taux.seuilPetite ? aide.taux.investissementGrande : aide.taux.investissementPetite;
+  let conseil = d.conseil * aide.taux.conseil;
+  if (aide.aideConseilParJourMax) conseil = Math.min(conseil, aide.aideConseilParJourMax * d.jours);
+  if (aide.plafondConseil) conseil = Math.min(conseil, aide.plafondConseil);
+  return Math.round(Math.min(d.dev * tauxInv + conseil, aide.plafond));
+}
+
+function simuler(r) {
+  const d = depenses(r);
+  const eligible = d.dev + d.conseil;
+  const aides = [];
+  for (const aide of AIDES) {
+    if (aide.nature === "pret" && d.total < aide.montantMin) continue;
+    const { pas, verif } = controle(aide, r);
+    const mentions = [];
+    let montant = null;
+    if (aide.nature === "pret") {
+      if (!pas.length) montant = Math.min(d.total, aide.montantMax);
+      mentions.push("C'est un prêt, à rembourser sur 3 à 5 ans : ce n'est pas une subvention.");
+    } else {
+      if (eligible === 0) pas.push("Aucune dépense finançable : abonnements, maintenance et formation ne sont pas pris en charge.");
+      if (!pas.length) montant = montantRegion(aide, r, d);
+      if (aide.bonification) mentions.push(aide.bonification);
+    }
+    const verdict = pas.length ? "pas_possible" : verif.length ? "a_verifier" : "possible";
+    aides.push({
+      id: aide.id, nom: aide.nom, organisme: aide.organisme, nature: aide.nature, resume: aide.resume,
+      verdict, montant, estimation: true, raisons: pas.length ? pas : verif, mentions,
+      demarches: aide.demarches, conditions: aide.conditions, source: aide.source, verifieLe: aide.verifieLe,
+    });
+  }
+
+  const conseils = [];
+  const ok = (id) => aides.find((a) => a.id === id && a.verdict !== "pas_possible");
+  if (ok("tpup") && ok("pmup"))
+    conseils.push("TP'up et PM'up : on en choisit une seule des deux pour un même plan (à confirmer avec la Région).");
+  if (eligible > 0 && eligible < SEUIL_PETIT_PROJET && (ok("tpup") || ok("pmup")))
+    conseils.push(
+      `Projet de ${euros(eligible)} : le dossier est lourd pour ce montant : regroupez plusieurs lots (site, outils, automatisations) en un seul plan pour que l'aide en vaille la peine.`
+    );
+  if (d.nonEligible > 0)
+    conseils.push(
+      "Les abonnements, la maintenance et la formation ne sont pas financés. Ce qui peut l'être gagne à être facturé en développement livré, en une fois."
+    );
+  if ((r.montantSigne || 0) > 0)
+    conseils.push(
+      "Les dépenses déjà signées ne sont plus finançables. Les prochains lots peuvent l'être si vous déposez le dossier avant de les signer."
+    );
+  return { aides, conseils, depenses: d };
+}
+
+// Pré-remplissage depuis les données officielles d'une entreprise (réponse de l'API Recherche d'entreprises,
+// copiée-collée par l'utilisateur : la page ne fait elle-même aucun appel réseau).
+
+const DEPARTEMENTS_IDF = ["75", "77", "78", "91", "92", "93", "94", "95"];
+
+// Tranches officielles d'effectif salarié → [min, max].
+const TRANCHES = {
+  "00": [0, 0], "01": [1, 2], "02": [3, 5], "03": [6, 9], "11": [10, 19], "12": [20, 49], "21": [50, 99],
+  "22": [100, 199], "31": [200, 249], "32": [250, 499], "41": [500, 999], "42": [1000, 1999],
+  "51": [2000, 4999], "52": [5000, 9999], "53": [10000, 10000],
+};
+
+const URL_DONNEES = (siren) => `https://recherche-entreprises.api.gouv.fr/search?q=${siren}`;
+const URL_FICHE = (siren) => `https://annuaire-entreprises.data.gouv.fr/entreprise/${siren}`;
+
+function secteurDepuisNaf(naf) {
+  const c = String(naf || "").replace(/[^0-9.]/g, "");
+  const d2 = Number(c.slice(0, 2));
+  const d4 = c.slice(0, 5);
+  if (d4 === "71.20") return "diagnostic_immobilier";
+  if (d2 === 68) return "immobilier";
+  if (d2 === 55 || d2 === 56) return "chr";
+  if (d2 === 46) return "negoce";
+  if (d2 === 47) return "commerce_detail";
+  if (d2 === 70) return "conseil";
+  if (d2 === 62 || d2 === 63) return "numerique";
+  if (d2 === 73) return "communication";
+  if (d2 === 85) return "formation";
+  if (d2 === 69 || d2 === 86 || d2 === 75) return "liberal";
+  if (d2 >= 64 && d2 <= 66) return "finance";
+  if (d2 === 49 || d2 === 52 || d2 === 53) return "logistique";
+  if (d2 >= 1 && d2 <= 3) return "agriculture";
+  if (d2 >= 41 && d2 <= 43) return "btp";
+  if (d2 >= 10 && d2 <= 33) return "industrie";
+  if (d2 === 88 || d2 === 97) return "services_personne";
+  return "autre";
+}
+
+function lireDonnees(texte, aujourdhui = new Date()) {
+  let data;
+  try {
+    const t = String(texte);
+    data = JSON.parse(t.slice(t.indexOf("{"), t.lastIndexOf("}") + 1));
+  } catch {
+    throw new Error("Ce texte n'est pas celui des données officielles : copiez toute la page ouverte par « Ouvrir les données ».");
+  }
+  const e = data && Array.isArray(data.results) ? data.results[0] : null;
+  if (!e) throw new Error("Aucune entreprise trouvée pour ce numéro. Vérifiez le SIREN.");
+
+  const valeurs = {};
+  const notes = [];
+  const dep = e.siege?.departement || String(e.siege?.code_postal || "").slice(0, 2);
+  valeurs.idf = DEPARTEMENTS_IDF.includes(dep) ? "oui" : "non";
+
+  if (e.date_creation) {
+    const ans = (aujourdhui - new Date(e.date_creation)) / (365.25 * 24 * 3600 * 1000);
+    valeurs.anciennete = ans < 1 ? "0.5" : ans <= 3 ? "2" : "4";
+  }
+
+  const t = TRANCHES[e.tranche_effectif_salarie];
+  if (t) {
+    valeurs.salaries = t[0];
+    if (t[0] !== t[1]) notes.push(`Effectif déclaré : ${t[0]} à ${t[1]} salariés. Le chiffre retenu est le bas de la tranche : corrigez-le si besoin.`);
+  } else {
+    valeurs.salaries = "";
+    notes.push("L'effectif n'est pas renseigné dans les données officielles : indiquez-le à la main.");
+  }
+
+  valeurs.secteur = secteurDepuisNaf(e.activite_principale);
+  notes.push(`Activité officielle (code NAF) : ${e.activite_principale || "inconnue"}. Vérifiez le secteur proposé.`);
+
+  const annees = e.finances ? Object.keys(e.finances).filter((a) => e.finances[a]?.ca != null).sort() : [];
+  if (annees.length) {
+    const a = annees[annees.length - 1];
+    valeurs.ca = e.finances[a].ca;
+    valeurs.exercice = "oui";
+    notes.push(`Chiffre d'affaires publié pour ${a}. S'il existe un exercice plus récent, corrigez-le.`);
+  } else {
+    valeurs.ca = "";
+    notes.push("Le chiffre d'affaires n'est pas publié : indiquez-le à la main.");
+  }
+  if (e.complements?.a_aide_minimis)
+    notes.push("L'entreprise a déjà reçu des aides publiques (régime de minimis) : vérifiez le montant reçu sur 3 ans.");
+  const nom = !e.nom_complet || e.nom_complet.includes("NON-DIFFUSIBLE") ? `Entreprise ${e.siren}` : e.nom_complet;
+  return { nom, valeurs, notes };
+}
+
+</script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Math.round(n).toLocaleString("fr-FR") + " €";
+  const LIB = { possible: "Possible", a_verifier: "À vérifier", pas_possible: "Pas possible" };
+  const EXEMPLE = { idf: "oui", salaries: 6, ca: 650000, anciennete: "4", exercice: "oui", secteur: "artisanat", aides3ans: "0",
+    dev: 12000, abonnement: 1200, conseilJours: 3, conseilTarif: 700, formation: 0, signe: 0 };
+  const VIDE = { idf: "oui", salaries: "", ca: "", anciennete: "2", exercice: "oui", secteur: "commerce_detail", aides3ans: "0",
+    dev: "", abonnement: "", conseilJours: "", conseilTarif: "", formation: "", signe: "" };
+
+  $("secteur").innerHTML = SECTEURS.map((s) => `<option value="${s.id}">${s.nom}</option>`).join("");
+
+  function remplir(v) { for (const [k, x] of Object.entries(v)) if (x !== undefined) $(k).value = x; }
+  const num = (id) => { const v = $(id).value.trim(); return v === "" ? null : Number(v); };
+  const zero = (id) => num(id) ?? 0;
+  const tri = (id, o, n) => ({ oui: o, non: n, nsp: null })[$(id).value];
+
+  function reponses() {
+    return {
+      idf: tri("idf", true, false), salaries: num("salaries"), ca: num("ca"),
+      anciennete: $("anciennete").value === "nsp" ? null : Number($("anciennete").value),
+      exerciceClos: tri("exercice", true, false), secteur: $("secteur").value,
+      aides3ans: $("aides3ans").value === "nsp" ? null : Number($("aides3ans").value),
+      dev: zero("dev"), abonnement: zero("abonnement"), conseilJours: zero("conseilJours"), conseilTarif: zero("conseilTarif"),
+      formation: zero("formation"), montantSigne: zero("signe"),
+    };
+  }
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const dateFr = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+
+  function carte(a) {
+    const montant = a.montant == null ? "" : `<div class="amount">${a.nature === "pret" ? "jusqu'à " : ""}${fmt(a.montant)}<small>${a.nature === "pret" ? "Estimation du prêt possible, à rembourser" : "Estimation de l'aide, au taux le plus bas du règlement"}</small></div>`;
+    const raisonsTitre = a.verdict === "pas_possible" ? "Pourquoi" : a.verdict === "a_verifier" ? "À vérifier" : "";
+    return `<article class="box aide" data-v="${a.verdict}">
+      <div class="aide-top"><div><h3>${esc(a.nom)}</h3><span class="org">${esc(a.organisme)} · ${a.nature === "pret" ? "prêt" : "subvention"}</span></div>
+      <span class="pill ${a.verdict}">${LIB[a.verdict]}</span></div>
+      <p class="muted">${esc(a.resume)}</p>
+      ${montant}
+      ${raisonsTitre ? `<div><strong>${raisonsTitre}</strong><ul>${a.raisons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div>` : ""}
+      ${a.mentions.map((m) => `<p class="muted">${esc(m)}</p>`).join("")}
+      <details ${a.verdict !== "pas_possible" ? "open" : ""}><summary>Les démarches, dans l'ordre</summary><ol>${a.demarches.map((d) => `<li>${esc(d)}</li>`).join("")}</ol></details>
+      <details><summary>Les conditions</summary><ul>${a.conditions.map((c) => `<li>${esc(c)}</li>`).join("")}</ul></details>
+      <p class="src">Source : <a href="${a.source.url}" target="_blank" rel="noopener">${esc(a.source.nom)}</a> · relue le ${dateFr(a.verifieLe)}</p>
+    </article>`;
+  }
+
+  function resume(r, res) {
+    const s = SECTEURS.find((x) => x.id === r.secteur);
+    const v = (x, u = "") => (x == null ? "je ne sais pas" : typeof x === "number" ? x.toLocaleString("fr-FR") + u : x);
+    const l = [
+      "SIMULATION D'AIDES — estimation, c'est la Région (ou Bpifrance) qui décide",
+      "",
+      `Lieu : ${r.idf == null ? "je ne sais pas" : r.idf ? "Île-de-France" : "autre région"}`,
+      `Salariés : ${v(r.salaries)}`,
+      `Chiffre d'affaires : ${v(r.ca, " €")}`,
+      `Ancienneté : ${$("anciennete").selectedOptions[0].text}`,
+      `Exercice clos : ${$("exercice").selectedOptions[0].text}`,
+      `Secteur : ${s ? s.nom : "?"}`,
+      `Aides reçues sur 3 ans : ${$("aides3ans").selectedOptions[0].text}`,
+      "",
+      `Développement livré : ${fmt(r.dev)} · Conseil : ${r.conseilJours} j × ${fmt(r.conseilTarif)} · Abonnements : ${fmt(r.abonnement)} · Formation : ${fmt(r.formation)} · Déjà signé : ${fmt(r.montantSigne)}`,
+      "",
+      ...res.aides.filter((a) => a.verdict !== "pas_possible").flatMap((a) => [
+        `${a.nom} (${a.organisme}) : ${LIB[a.verdict]}${a.montant != null ? ` — ${a.nature === "pret" ? "prêt jusqu'à " : "≈ "}${fmt(a.montant)} (estimation)` : ""}`,
+        ...a.raisons.map((x) => `  - ${x}`),
+      ]),
+      ...(res.conseils.length ? ["", "Conseils :", ...res.conseils.map((c) => `  - ${c}`)] : []),
+      "",
+      "Contact : Cédric Gicquiaud — cedric.gicquiaud@gmail.com — linkedin.com/in/cedric-gicquiaud",
+    ];
+    return l.join("\n");
+  }
+
+  function rendre() {
+    const r = reponses();
+    const res = simuler(r);
+    const d = res.depenses;
+    $("recap").innerHTML = [
+      ["Finançable : développement livré", d.dev], ["Finançable : conseil", d.conseil],
+      ["Non finançable : abonnements, maintenance, formation", d.nonEligible], ["Déjà signé (plus finançable)", r.montantSigne],
+    ].map(([k, x]) => `<span>${k}</span><span>${fmt(x)}</span>`).join("");
+    const visibles = res.aides.filter((a) => a.verdict !== "pas_possible");
+    $("aides").innerHTML = visibles.length ? visibles.map(carte).join("")
+      : `<div class="box"><p class="muted">Aucune aide ne correspond à ces réponses. Vérifiez le lieu, l'effectif, le secteur et les dépenses : seuls le développement livré et le conseil sont finançables.</p></div>`;
+    $("conseils").innerHTML = res.conseils.map((c) => `<li>${esc(c)}</li>`).join("");
+    $("conseils-box").hidden = !res.conseils.length;
+    $("resume").textContent = resume(r, res);
+  }
+
+  const sirenNet = () => $("siren").value.replace(/\D/g, "");
+  function appliquer(texte) {
+    const m = $("siren-msg");
+    m.hidden = false;
+    try {
+      const r = lireDonnees(texte);
+      remplir(r.valeurs);
+      $("example-flag").hidden = true;
+      m.className = "siren-msg ok";
+      m.innerHTML = `<strong>${esc(r.nom)} : réponses de l'entreprise remplies.</strong><ul>${r.notes.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
+      rendre();
+      return true;
+    } catch (e) { m.className = "siren-msg err"; m.textContent = e.message; return false; }
+  }
+  let demande = 0;
+  async function chercher(s9) {
+    const id = ++demande, m = $("siren-msg");
+    m.hidden = false; m.className = "siren-msg"; m.textContent = "Recherche de l'entreprise…";
+    try {
+      const rep = await fetch(URL_DONNEES(s9), { headers: { Accept: "application/json" } });
+      if (!rep.ok) throw new Error(String(rep.status));
+      const texte = await rep.text();
+      if (id === demande) { appliquer(texte); $("secours").hidden = true; }
+    } catch {
+      if (id !== demande) return;
+      m.className = "siren-msg err";
+      m.textContent = "Le service de l'État n'a pas répondu. Utilisez le remplissage manuel ci-dessous.";
+      $("secours").hidden = false;
+    }
+  }
+  $("siren").addEventListener("input", () => {
+    const n = sirenNet(), ok = n.length === 9 || n.length === 14, s9 = n.slice(0, 9);
+    $("lien-donnees").href = ok ? URL_DONNEES(s9) : "https://recherche-entreprises.api.gouv.fr";
+    $("lien-fiche").href = ok ? URL_FICHE(s9) : "https://annuaire-entreprises.data.gouv.fr";
+    $("lien-fiche").setAttribute("aria-disabled", String(!ok));
+    if (ok) chercher(s9); else { demande++; $("siren-msg").hidden = true; }
+  });
+  $("colle").addEventListener("input", () => { const t = $("colle").value.trim(); if (t) appliquer(t); });
+  $("f").addEventListener("input", (e) => { if (e.target.id === "siren" || e.target.id === "colle") return; $("example-flag").hidden = true; rendre(); });
+  $("f").addEventListener("submit", (e) => e.preventDefault());
+  $("reset").addEventListener("click", () => { remplir(VIDE); $("example-flag").hidden = true; rendre(); });
+
+  async function copier(texte, msgEl, el) {
+    try { await navigator.clipboard.writeText(texte); if (msgEl) msgEl.textContent = "Copié."; }
+    catch { const sel = getSelection(); const range = document.createRange(); range.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(range);
+      if (msgEl) msgEl.textContent = "Texte sélectionné : copiez-le avec Ctrl+C ou Cmd+C."; }
+  }
+  $("copy").addEventListener("click", () => copier($("resume").textContent, $("copy-msg"), $("resume")));
+  document.querySelector('[data-copy="mail"]').addEventListener("click", (e) => copier($("mail").textContent, null, $("mail")).then(() => { e.target.textContent = "Adresse copiée"; }));
+
+  remplir(EXEMPLE);
+  rendre();
+})();
+</script>
+</body></html>
