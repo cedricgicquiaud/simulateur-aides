@@ -92,6 +92,8 @@ details[open] summary { margin-bottom: 8px; }
 .conseils { display: grid; gap: 8px; margin: 0; padding-left: 20px; }
 .recap { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; font-size: 14px; font-variant-numeric: tabular-nums; }
 .recap span:nth-child(even) { text-align: right; font-family: var(--mono); }
+details pre { margin-top: 10px; }
+.actions { align-items: center; }
 pre { white-space: pre-wrap; word-break: break-word; font: 12.5px/1.5 var(--mono); background: var(--surface-2); border: 1px solid var(--border);
   border-radius: 8px; padding: 12px; margin: 0 0 10px; max-height: 260px; overflow: auto; }
 .contact { display: grid; gap: 8px; }
@@ -165,10 +167,10 @@ pre { white-space: pre-wrap; word-break: break-word; font: 12.5px/1.5 var(--mono
         <ul class="conseils" id="conseils"></ul>
       </div>
       <div class="box">
-        <h2>Votre résumé</h2>
-        <pre id="resume"></pre>
-        <button type="button" class="primary" id="copy">Copier le résumé</button>
-        <span class="muted" id="copy-msg" role="status"></span>
+        <h2>Garder une trace</h2>
+        <p class="muted">Copiez le résultat de cette simulation pour le coller dans un mail, un message ou vos notes : vos réponses, les aides possibles et les conseils.</p>
+        <div class="actions"><button type="button" class="primary" id="copy">Copier le résultat</button><span class="muted" id="copy-msg" role="status"></span></div>
+        <details><summary>Voir le texte copié</summary><pre id="resume"></pre></details>
       </div>
       <div class="box contact">
         <h2>Préparer votre plan en lots</h2>
@@ -572,6 +574,7 @@ function lireDonnees(texte, aujourdhui = new Date()) {
       "",
       `Développement livré : ${fmt(r.dev)} · Conseil : ${r.conseilJours} j × ${fmt(r.conseilTarif)} · Abonnements : ${fmt(r.abonnement)} · Formation : ${fmt(r.formation)} · Déjà signé : ${fmt(r.montantSigne)}`,
       "",
+      ...(res.aides.some((a) => a.verdict !== "pas_possible") ? [] : ["Aucune aide financière ne correspond à ces réponses aujourd'hui."]),
       ...res.aides.filter((a) => a.verdict !== "pas_possible").flatMap((a) => [
         `${a.nom} (${a.organisme}) : ${LIB[a.verdict]}${a.montant != null ? ` — ${a.nature === "pret" ? "prêt jusqu'à " : "≈ "}${fmt(a.montant)} (estimation)` : ""}`,
         ...a.raisons.map((x) => `  - ${x}`),
