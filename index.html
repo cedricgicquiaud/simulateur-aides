@@ -158,11 +158,11 @@ pre { white-space: pre-wrap; word-break: break-word; font: 12.5px/1.5 var(--mono
         <h2 id="t-r">Vos dépenses</h2>
         <div class="recap" id="recap"></div>
       </div>
-      <div id="aides" class="results-list" style="display:grid;gap:14px"></div>
       <div class="box" id="conseils-box">
         <h2>Conseils pour votre dossier</h2>
         <ul class="conseils" id="conseils"></ul>
       </div>
+      <div id="aides" class="results-list" style="display:grid;gap:14px"></div>
     </section>
   </div>
 </div>
@@ -390,9 +390,17 @@ function simuler(r) {
   }
 
   const conseils = [];
-  const ok = (id) => aides.find((a) => a.id === id && a.verdict !== "pas_possible");
-  if (ok("tpup") && ok("pmup"))
-    conseils.push("TP'up et PM'up : on en choisit une seule des deux pour un même plan (à confirmer avec la Région).");
+  const ok = (id) => aides.find((a) => a.id === id && a.verdict !== "pas_possible" && !a.ecartee);
+  for (const a of aides) a.ecartee = false;
+  // Entre 5 et 9 salariés, TP'up et PM'up sont toutes deux ouvertes : on ne garde que la plus avantageuse.
+  const t = ok("tpup"), p = ok("pmup");
+  if (t && p) {
+    const [garde, autre] = (p.montant ?? 0) > (t.montant ?? 0) ? [p, t] : [t, p];
+    autre.ecartee = true;
+    garde.mentions.push(
+      `${autre.nom} est aussi ouverte à une entreprise de cette taille, mais rapporterait moins ici (${euros(autre.montant ?? 0)}). On ne peut en demander qu'une pour un même plan.`
+    );
+  }
   if (eligible > 0 && eligible < SEUIL_PETIT_PROJET && (ok("tpup") || ok("pmup")))
     conseils.push(
       `Projet de ${euros(eligible)} : le dossier est lourd pour ce montant : regroupez plusieurs lots (site, outils, automatisations) en un seul plan pour que l'aide en vaille la peine.`
@@ -551,7 +559,7 @@ function lireDonnees(texte, aujourdhui = new Date()) {
       ["Finançable : développement livré", d.dev], ["Finançable : conseil", d.conseil],
       ["Non finançable : abonnements, maintenance, formation", d.nonEligible], ["Déjà signé (plus finançable)", r.montantSigne],
     ].map(([k, x]) => `<span>${k}</span><span>${fmt(x)}</span>`).join("");
-    const visibles = res.aides.filter((a) => a.verdict !== "pas_possible");
+    const visibles = res.aides.filter((a) => a.verdict !== "pas_possible" && !a.ecartee);
     $("aides").innerHTML = visibles.length ? visibles.map(carte).join("")
       : `<div class="box aide" data-v="pas_possible"><h3 style="margin:0">Aucune aide financière aujourd'hui</h3>
         <p class="muted">Avec ces réponses, aucune aide publique ne finance ce projet. En Île-de-France, les aides au numérique passent par la Région et l'État, et demandent au moins un salarié : les départements et les villes n'ont plus le droit d'aider directement les entreprises.</p>
