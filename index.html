@@ -96,9 +96,6 @@ details pre { margin-top: 10px; }
 .actions { align-items: center; }
 pre { white-space: pre-wrap; word-break: break-word; font: 12.5px/1.5 var(--mono); background: var(--surface-2); border: 1px solid var(--border);
   border-radius: 8px; padding: 12px; margin: 0 0 10px; max-height: 260px; overflow: auto; }
-.contact { display: grid; gap: 8px; }
-.contact-line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
-.contact-line code { font-family: var(--mono); font-size: 13.5px; user-select: all; overflow-wrap: anywhere; }
 .bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
   background: var(--surface-2); border-top: 1px solid var(--border); font-size: 13px; text-align: center; color: var(--fg); z-index: 5; }
 .bar strong { color: var(--warn); }
@@ -165,12 +162,6 @@ pre { white-space: pre-wrap; word-break: break-word; font: 12.5px/1.5 var(--mono
       <div class="box" id="conseils-box">
         <h2>Conseils pour votre dossier</h2>
         <ul class="conseils" id="conseils"></ul>
-      </div>
-      <div class="box contact">
-        <h2>Préparer votre plan en lots</h2>
-        <p class="muted">Je suis Cédric Gicquiaud, product builder IA en Île-de-France. Je prépare avec vous la feuille de route en lots qui sert de base au dossier, puis je réalise les lots.</p>
-        <div class="contact-line"><code id="mail">cedric.gicquiaud@gmail.com</code><button type="button" data-copy="mail">Copier l'adresse</button></div>
-        <div class="contact-line"><a href="https://www.linkedin.com/in/cedric-gicquiaud" target="_blank" rel="noopener">linkedin.com/in/cedric-gicquiaud</a></div>
       </div>
     </section>
   </div>
@@ -609,12 +600,6 @@ function lireDonnees(texte, aujourdhui = new Date()) {
   $("f").addEventListener("submit", (e) => e.preventDefault());
   $("reset").addEventListener("click", () => { remplir(VIDE); $("example-flag").hidden = true; rendre(); });
 
-  async function copier(texte, msgEl, el) {
-    try { await navigator.clipboard.writeText(texte); if (msgEl) msgEl.textContent = "Copié."; }
-    catch { const sel = getSelection(); const range = document.createRange(); range.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(range);
-      if (msgEl) msgEl.textContent = "Texte sélectionné : copiez-le avec Ctrl+C ou Cmd+C."; }
-  }
-  document.querySelector('[data-copy="mail"]').addEventListener("click", (e) => copier($("mail").textContent, null, $("mail")).then(() => { e.target.textContent = "Adresse copiée"; }));
 
   remplir(EXEMPLE);
   rendre();

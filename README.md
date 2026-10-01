@@ -8,4 +8,3 @@ En ligne : https://cedricgicquiaud.github.io/simulateur-aides/
 
 Estimation : c'est la Région (ou Bpifrance) qui décide. Sources relues le 1er octobre 2026.
 
-Réalisé par Cédric Gicquiaud, product builder IA — linkedin.com/in/cedric-gicquiaud
