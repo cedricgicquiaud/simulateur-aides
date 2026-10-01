@@ -132,7 +132,7 @@ pre { white-space: pre-wrap; word-break: break-word; font: 12.5px/1.5 var(--mono
           <legend>L'entreprise</legend>
           <div class="row">
             <label for="idf"><span class="lt">Où est-elle établie ?</span><select id="idf"><option value="oui">Île-de-France</option><option value="non">Autre région</option><option value="nsp">Je ne sais pas</option></select><span class="hint"></span></label>
-            <label for="salaries"><span class="lt">Nombre de salariés</span><input id="salaries" type="number" min="0" step="1" inputmode="numeric"><span class="hint">Le président de SAS compte, le gérant majoritaire de SARL non. Vide = je ne sais pas.</span></label>
+            <label for="salaries"><span class="lt">Nombre de salariés</span><input id="salaries" type="number" min="0" step="1" inputmode="numeric"><span class="hint">Seules les personnes en contrat de travail comptent. Vide = je ne sais pas.</span></label>
             <label for="ca"><span class="lt">Chiffre d'affaires du dernier exercice (€ HT)</span><input id="ca" type="number" min="0" step="1000" inputmode="numeric"><span class="hint">Vide = je ne sais pas.</span></label>
             <label for="anciennete"><span class="lt">Ancienneté</span><select id="anciennete"><option value="0.5">Moins d'un an</option><option value="2">1 à 3 ans</option><option value="4">Plus de 3 ans</option><option value="nsp">Je ne sais pas</option></select><span class="hint"></span></label>
             <label for="exercice"><span class="lt">Un premier exercice comptable est-il clos ?</span><select id="exercice"><option value="oui">Oui</option><option value="non">Non</option><option value="nsp">Je ne sais pas</option></select><span class="hint"></span></label>
@@ -313,7 +313,7 @@ const SEUIL_PETIT_PROJET = 10_000;
 
 
 const QUI_COMPTE =
-  "Comptent comme salariés les personnes en contrat de travail, dont le président de SAS ; le gérant majoritaire de SARL ne compte pas.";
+  "Seules comptent les personnes en contrat de travail ; un dirigeant sans contrat de travail (gérant, président) ne compte pas, à confirmer avec la Région.";
 
 const euros = (n) => `${Math.round(n).toLocaleString("fr-FR")} €`;
 const inconnu = (v) => v === null || v === undefined;
@@ -338,6 +338,8 @@ function controle(aide, r) {
     else if (inconnu(r.idf)) verif.push("Où l'entreprise est établie (Île-de-France ou non).");
   }
   if (inconnu(r.salaries)) verif.push("Le nombre de salariés. " + QUI_COMPTE);
+  else if (r.salaries === 0 && aide.id === "tpup" && r.secteur === "artisanat")
+    verif.push("Aucun salarié : une entreprise artisanale est admise si son plan crée un emploi. " + QUI_COMPTE);
   else if (r.salaries === 0) pas.push("Aucun salarié. " + QUI_COMPTE);
   else if (r.salaries < aide.salaries.min) pas.push(`Moins de ${aide.salaries.min} salariés.`);
   else if (r.salaries > aide.salaries.max) pas.push(`Plus de ${aide.salaries.max} salariés.`);
