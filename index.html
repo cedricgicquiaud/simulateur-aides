@@ -87,6 +87,8 @@ textarea { height: auto; padding: 9px 10px; resize: vertical; font-size: 13px; }
 .muted { color: var(--muted); font-size: 13.5px; }
 details summary { cursor: pointer; font-weight: 600; font-size: 14px; }
 details[open] summary { margin-bottom: 8px; }
+.notes { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
+.detail { display: grid; gap: 12px; padding-top: 4px; }
 .src { font-size: 12.5px; color: var(--muted); }
 .src a { color: var(--primary); }
 .conseils { display: grid; gap: 8px; margin: 0; padding-left: 20px; }
@@ -390,16 +392,14 @@ function simuler(r) {
   }
 
   const conseils = [];
-  const ok = (id) => aides.find((a) => a.id === id && a.verdict !== "pas_possible" && !a.ecartee);
-  for (const a of aides) a.ecartee = false;
-  // Entre 5 et 9 salariés, TP'up et PM'up sont toutes deux ouvertes : on ne garde que la plus avantageuse.
+  const ok = (id) => aides.find((a) => a.id === id && a.verdict !== "pas_possible");
+  // Entre 5 et 9 salariés, TP'up et PM'up sont toutes deux ouvertes : une seule peut être demandée pour un même plan.
   const t = ok("tpup"), p = ok("pmup");
   if (t && p) {
-    const [garde, autre] = (p.montant ?? 0) > (t.montant ?? 0) ? [p, t] : [t, p];
-    autre.ecartee = true;
-    garde.mentions.push(
-      `${autre.nom} est aussi ouverte à une entreprise de cette taille, mais rapporterait moins ici (${euros(autre.montant ?? 0)}). On ne peut en demander qu'une pour un même plan.`
-    );
+    const meilleure = (p.montant ?? 0) > (t.montant ?? 0) ? p : t;
+    const phrase = `Pour un même plan, on ne peut demander qu'une seule des deux (TP'up ou PM'up) : ici, ${meilleure.nom} rapporte le plus.`;
+    t.mentions.unshift(phrase);
+    p.mentions.unshift(phrase);
   }
   if (eligible > 0 && eligible < SEUIL_PETIT_PROJET && (ok("tpup") || ok("pmup")))
     conseils.push(
@@ -535,21 +535,32 @@ function lireDonnees(texte, aujourdhui = new Date()) {
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const dateFr = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 
+  const ouverts = new Set();
   function carte(a) {
-    const montant = a.montant == null ? "" : `<div class="amount">${a.nature === "pret" ? "jusqu'à " : ""}${fmt(a.montant)}<small>${a.nature === "pret" ? "Estimation du prêt possible, à rembourser" : "Estimation de l'aide, au taux le plus bas du règlement"}</small></div>`;
-    const raisonsTitre = a.verdict === "pas_possible" ? "Pourquoi" : a.verdict === "a_verifier" ? "À vérifier" : "";
+    const montant = a.montant == null ? "" : `<div class="amount">${a.nature === "pret" ? "jusqu'à " : ""}${fmt(a.montant)}<small>${a.nature === "pret" ? "Prêt possible, à rembourser (estimation)" : "Aide estimée, au taux le plus bas du règlement"}</small></div>`;
+    const choix = a.mentions.filter((m) => m.includes("une seule des deux"));
+    const autres = a.mentions.filter((m) => !m.includes("une seule des deux"));
+    const notes = [...(a.verdict === "a_verifier" ? a.raisons.map((r) => "À vérifier : " + r) : []), ...choix];
     return `<article class="box aide" data-v="${a.verdict}">
       <div class="aide-top"><div><h3>${esc(a.nom)}</h3><span class="org">${esc(a.organisme)} · ${a.nature === "pret" ? "prêt" : "subvention"}</span></div>
       <span class="pill ${a.verdict}">${LIB[a.verdict]}</span></div>
-      <p class="muted">${esc(a.resume)}</p>
       ${montant}
-      ${raisonsTitre ? `<div><strong>${raisonsTitre}</strong><ul>${a.raisons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul></div>` : ""}
-      ${a.mentions.map((m) => `<p class="muted">${esc(m)}</p>`).join("")}
-      <details ${a.verdict !== "pas_possible" ? "open" : ""}><summary>Les démarches, dans l'ordre</summary><ol>${a.demarches.map((d) => `<li>${esc(d)}</li>`).join("")}</ol></details>
-      <details><summary>Les conditions</summary><ul>${a.conditions.map((c) => `<li>${esc(c)}</li>`).join("")}</ul></details>
-      <p class="src">Source : <a href="${a.source.url}" target="_blank" rel="noopener">${esc(a.source.nom)}</a> · relue le ${dateFr(a.verifieLe)}</p>
+      ${notes.length ? `<ul class="notes">${notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}
+      <details data-id="${a.id}" ${ouverts.has(a.id) ? "open" : ""}><summary>Tout savoir sur ${esc(a.nom)}</summary>
+        <div class="detail">
+          <p>${esc(a.resume)}</p>
+          ${autres.map((m) => `<p class="muted">${esc(m)}</p>`).join("")}
+          <div><strong>Les démarches, dans l'ordre</strong><ol>${a.demarches.map((d) => `<li>${esc(d)}</li>`).join("")}</ol></div>
+          <div><strong>Les conditions</strong><ul>${a.conditions.map((c) => `<li>${esc(c)}</li>`).join("")}</ul></div>
+          <p class="src">Source : <a href="${a.source.url}" target="_blank" rel="noopener">${esc(a.source.nom)}</a> · relue le ${dateFr(a.verifieLe)}</p>
+        </div>
+      </details>
     </article>`;
   }
+  document.addEventListener("toggle", (e) => {
+    const id = e.target.dataset?.id;
+    if (id) e.target.open ? ouverts.add(id) : ouverts.delete(id);
+  }, true);
 
   function rendre() {
     const r = reponses();
