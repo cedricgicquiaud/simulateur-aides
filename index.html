@@ -593,7 +593,10 @@ function lireDonnees(texte, aujourdhui = new Date()) {
     ].map(([k, x]) => `<span>${k}</span><span>${fmt(x)}</span>`).join("");
     const visibles = res.aides.filter((a) => a.verdict !== "pas_possible");
     $("aides").innerHTML = visibles.length ? visibles.map(carte).join("")
-      : `<div class="box"><p class="muted">Aucune aide ne correspond à ces réponses. Vérifiez le lieu, l'effectif, le secteur et les dépenses : seuls le développement livré et le conseil sont finançables.</p></div>`;
+      : `<div class="box aide" data-v="pas_possible"><h3 style="margin:0">Aucune aide financière aujourd'hui</h3>
+        <p class="muted">Avec ces réponses, aucune aide publique ne finance ce projet. En Île-de-France, les aides au numérique passent par la Région et l'État, et demandent au moins un salarié : les départements et les villes n'ont plus le droit d'aider directement les entreprises.</p>
+        <p class="muted">Le chèque numérique de la Région est fermé depuis le 24 octobre 2025, sans remplaçant. Méfiez-vous des sites qui l'annoncent encore en 2026.</p>
+        <p class="muted">Vérifiez aussi le lieu, l'effectif, le secteur et les dépenses : seuls le développement livré et le conseil sont finançables.</p></div>`;
     $("conseils").innerHTML = res.conseils.map((c) => `<li>${esc(c)}</li>`).join("");
     $("conseils-box").hidden = !res.conseils.length;
     $("resume").textContent = resume(r, res);
