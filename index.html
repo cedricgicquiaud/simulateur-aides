@@ -403,8 +403,7 @@ function simuler(r) {
   if (t && p) {
     const meilleure = (p.montant ?? 0) > (t.montant ?? 0) ? p : t;
     const phrase = `À choisir entre TP'up et PM'up : une seule des deux par plan. Ici, ${meilleure.nom} rapporte le plus.`;
-    t.mentions.unshift(phrase);
-    p.mentions.unshift(phrase);
+    conseils.push(phrase);
   }
   if (eligible > 0 && eligible < SEUIL_PETIT_PROJET && (ok("tpup") || ok("pmup")))
     conseils.push(
@@ -543,9 +542,8 @@ function lireDonnees(texte, aujourdhui = new Date()) {
   const ouverts = new Set();
   function carte(a) {
     const montant = a.montant == null ? "" : `<div class="amount">${a.nature === "pret" ? "<span>jusqu'à</span> " : ""}${fmt(a.montant)}</div>`;
-    const choix = a.mentions.filter((m) => m.includes("une seule des deux"));
-    const autres = a.mentions.filter((m) => !m.includes("une seule des deux"));
-    const notes = [...(a.verdict === "a_verifier" ? a.raisons.map((r) => "À vérifier : " + r) : []), ...choix];
+    const autres = a.mentions;
+    const notes = a.verdict === "a_verifier" ? a.raisons.map((r) => "À vérifier : " + r) : [];
     const sous = `${esc(a.organisme)} · ${a.nature === "pret" ? "prêt à rembourser" : "subvention"}${a.montant == null ? "" : " · estimation au taux le plus bas"}`;
     return `<article class="box aide" data-v="${a.verdict}">
       <div class="aide-head">
