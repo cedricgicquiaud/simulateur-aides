@@ -73,8 +73,6 @@ textarea { height: auto; padding: 9px 10px; resize: vertical; font-size: 13px; }
 .aide[data-v="possible"] { border-left-color: var(--ok); }
 .aide[data-v="a_verifier"] { border-left-color: var(--warn); }
 .aide[data-v="pas_possible"] { border-left-color: var(--ko); }
-.aide-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-.aide-top h3 { margin: 0; font-size: 1.15rem; }
 .org { color: var(--muted); font-size: 13px; }
 .pill { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
 .pill.possible { color: var(--ok); background: var(--ok-bg); }
@@ -87,7 +85,14 @@ textarea { height: auto; padding: 9px 10px; resize: vertical; font-size: 13px; }
 .muted { color: var(--muted); font-size: 13.5px; }
 details summary { cursor: pointer; font-weight: 600; font-size: 14px; }
 details[open] summary { margin-bottom: 8px; }
-.notes { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
+.aide-head { display: flex; justify-content: space-between; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+.aide-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.aide-title h3 { margin: 0; font-size: 1.2rem; }
+.aide-head .amount { font-size: 1.5rem; white-space: nowrap; }
+.aide-head .amount span { font: 400 13px var(--sans); color: var(--muted); }
+.sous { margin: -4px 0 0; font-size: 13px; color: var(--muted); }
+.notes { display: grid; gap: 4px; font-size: 14px; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); }
+.notes p { margin: 0; }
 .detail { display: grid; gap: 12px; padding-top: 4px; }
 .src { font-size: 12.5px; color: var(--muted); }
 .src a { color: var(--primary); }
@@ -397,7 +402,7 @@ function simuler(r) {
   const t = ok("tpup"), p = ok("pmup");
   if (t && p) {
     const meilleure = (p.montant ?? 0) > (t.montant ?? 0) ? p : t;
-    const phrase = `Pour un même plan, on ne peut demander qu'une seule des deux (TP'up ou PM'up) : ici, ${meilleure.nom} rapporte le plus.`;
+    const phrase = `À choisir entre TP'up et PM'up : une seule des deux par plan. Ici, ${meilleure.nom} rapporte le plus.`;
     t.mentions.unshift(phrase);
     p.mentions.unshift(phrase);
   }
@@ -537,16 +542,19 @@ function lireDonnees(texte, aujourdhui = new Date()) {
 
   const ouverts = new Set();
   function carte(a) {
-    const montant = a.montant == null ? "" : `<div class="amount">${a.nature === "pret" ? "jusqu'à " : ""}${fmt(a.montant)}<small>${a.nature === "pret" ? "Prêt possible, à rembourser (estimation)" : "Aide estimée, au taux le plus bas du règlement"}</small></div>`;
+    const montant = a.montant == null ? "" : `<div class="amount">${a.nature === "pret" ? "<span>jusqu'à</span> " : ""}${fmt(a.montant)}</div>`;
     const choix = a.mentions.filter((m) => m.includes("une seule des deux"));
     const autres = a.mentions.filter((m) => !m.includes("une seule des deux"));
     const notes = [...(a.verdict === "a_verifier" ? a.raisons.map((r) => "À vérifier : " + r) : []), ...choix];
+    const sous = `${esc(a.organisme)} · ${a.nature === "pret" ? "prêt à rembourser" : "subvention"}${a.montant == null ? "" : " · estimation au taux le plus bas"}`;
     return `<article class="box aide" data-v="${a.verdict}">
-      <div class="aide-top"><div><h3>${esc(a.nom)}</h3><span class="org">${esc(a.organisme)} · ${a.nature === "pret" ? "prêt" : "subvention"}</span></div>
-      <span class="pill ${a.verdict}">${LIB[a.verdict]}</span></div>
-      ${montant}
-      ${notes.length ? `<ul class="notes">${notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}
-      <details data-id="${a.id}" ${ouverts.has(a.id) ? "open" : ""}><summary>Tout savoir sur ${esc(a.nom)}</summary>
+      <div class="aide-head">
+        <div class="aide-title"><h3>${esc(a.nom)}</h3><span class="pill ${a.verdict}">${LIB[a.verdict]}</span></div>
+        ${montant}
+      </div>
+      <p class="sous">${sous}</p>
+      ${notes.length ? `<div class="notes">${notes.map((n) => `<p>${esc(n)}</p>`).join("")}</div>` : ""}
+      <details data-id="${a.id}" ${ouverts.has(a.id) ? "open" : ""}><summary>Détails : démarches, conditions, source</summary>
         <div class="detail">
           <p>${esc(a.resume)}</p>
           ${autres.map((m) => `<p class="muted">${esc(m)}</p>`).join("")}
