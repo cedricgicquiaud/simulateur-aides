@@ -62,8 +62,6 @@ textarea { height: auto; padding: 9px 10px; resize: vertical; font-size: 13px; }
 .btn.ghost { background: transparent; color: var(--fg); border-color: var(--border); }
 .btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
 .steps { margin: 0; padding-left: 20px; font-size: 13px; color: var(--muted); display: grid; gap: 2px; }
-.secours { display: grid; gap: 8px; }
-.secours a { color: var(--primary); }
 .siren-msg { font-size: 13px; display: grid; gap: 4px; }
 .siren-msg.ok { color: var(--ok); } .siren-msg.err { color: var(--ko); }
 .siren-msg ul { margin: 0; padding-left: 18px; color: var(--muted); }
@@ -127,15 +125,6 @@ pre { white-space: pre-wrap; word-break: break-word; font: 12.5px/1.5 var(--mono
             <a class="btn ghost" id="lien-fiche" href="https://annuaire-entreprises.data.gouv.fr" target="_blank" rel="noopener" aria-disabled="true">Voir la fiche officielle</a>
           </div>
           <p class="hint">Les réponses sur l'entreprise se remplissent dès que le numéro est complet, à partir des données publiques de l'État.</p>
-          <div id="secours" class="secours" hidden>
-            <p class="hint">Les données n'ont pas pu être chargées depuis cette page. Remplissage manuel en trois étapes :</p>
-            <ol class="steps">
-              <li><a id="lien-donnees" href="https://recherche-entreprises.api.gouv.fr" target="_blank" rel="noopener">Ouvrir les données de l'entreprise</a> (une page de l'État s'ouvre).</li>
-              <li>Sur cette page, sélectionnez tout (Ctrl+A ou Cmd+A) et copiez (Ctrl+C ou Cmd+C).</li>
-              <li>Collez ci-dessous.</li>
-            </ol>
-            <textarea id="colle" rows="2" placeholder="Collez ici les données copiées" aria-label="Données officielles copiées"></textarea>
-          </div>
           <div id="siren-msg" class="siren-msg" role="status" hidden></div>
         </fieldset>
         <fieldset>
@@ -629,23 +618,20 @@ function lireDonnees(texte, aujourdhui = new Date()) {
       const rep = await fetch(URL_DONNEES(s9), { headers: { Accept: "application/json" } });
       if (!rep.ok) throw new Error(String(rep.status));
       const texte = await rep.text();
-      if (id === demande) { appliquer(texte); $("secours").hidden = true; }
+      if (id === demande) appliquer(texte);
     } catch {
       if (id !== demande) return;
       m.className = "siren-msg err";
-      m.textContent = "Le service de l'État n'a pas répondu. Utilisez le remplissage manuel ci-dessous.";
-      $("secours").hidden = false;
+      m.textContent = "Le service de l'État ne répond pas pour le moment. Réessayez dans un instant, ou remplissez les réponses à la main.";
     }
   }
   $("siren").addEventListener("input", () => {
     const n = sirenNet(), ok = n.length === 9 || n.length === 14, s9 = n.slice(0, 9);
-    $("lien-donnees").href = ok ? URL_DONNEES(s9) : "https://recherche-entreprises.api.gouv.fr";
     $("lien-fiche").href = ok ? URL_FICHE(s9) : "https://annuaire-entreprises.data.gouv.fr";
     $("lien-fiche").setAttribute("aria-disabled", String(!ok));
     if (ok) chercher(s9); else { demande++; $("siren-msg").hidden = true; }
   });
-  $("colle").addEventListener("input", () => { const t = $("colle").value.trim(); if (t) appliquer(t); });
-  $("f").addEventListener("input", (e) => { if (e.target.id === "siren" || e.target.id === "colle") return; $("example-flag").hidden = true; rendre(); });
+  $("f").addEventListener("input", (e) => { if (e.target.id === "siren") return; $("example-flag").hidden = true; rendre(); });
   $("f").addEventListener("submit", (e) => e.preventDefault());
   $("reset").addEventListener("click", () => { remplir(VIDE); $("example-flag").hidden = true; rendre(); });
 
