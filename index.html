@@ -41,32 +41,35 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 @media (max-width: 860px) { .cols { grid-template-columns: minmax(0, 1fr); } }
 .box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; backdrop-filter: blur(4px); min-width: 0; }
 .box h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 14px; font-weight: 600; }
-form { display: grid; gap: 18px; }
-fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; }
-legend { font-weight: 700; padding: 0; margin-bottom: 4px; }
-.row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; row-gap: 14px; grid-auto-rows: auto; }
-.row > label { grid-row: span 3; display: grid; grid-template-rows: subgrid; row-gap: 5px; }
-@media (max-width: 480px) { .row { grid-template-columns: minmax(0, 1fr); } }
-label { font-size: 13.5px; font-weight: 500; min-width: 0; }
-.lt { align-self: end; }
+.left { display: grid; gap: 20px; min-width: 0; }
+.box-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+.box-head h2 { margin: 0; }
+.badge { font-size: 12px; font-weight: 600; color: var(--warn); background: var(--warn-bg); padding: 2px 10px; border-radius: 999px; }
+.qs { display: grid; }
+.q { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 15rem); gap: 6px 16px; align-items: center; padding-block: 10px; border-top: 1px solid var(--border); }
+.q:first-child { border-top: 0; }
+@media (max-width: 520px) { .q { grid-template-columns: minmax(0, 1fr); } }
+.q label { display: grid; gap: 2px; font-size: 14px; font-weight: 600; }
 .hint { font-size: 12.5px; color: var(--muted); font-weight: 400; }
-.hint:empty { display: none; }
-input, select, textarea { font: inherit; width: 100%; height: 42px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border);
+input, select { font: inherit; font-size: 14px; width: 100%; height: 40px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border);
   background: var(--surface-2); color: var(--fg); font-variant-numeric: tabular-nums; }
-textarea { height: auto; padding: 9px 10px; resize: vertical; font-size: 13px; }
-.siren { background: var(--surface-2); border: 1px dashed var(--border) !important; border-radius: 10px; padding: 14px !important; }
+input[type="number"] { text-align: right; }
+.money { position: relative; display: flex; align-items: center; }
+.money input { padding-right: 34px; }
+.money span { position: absolute; right: 10px; font-size: 13px; color: var(--muted); pointer-events: none; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.4fr); align-items: center; gap: 6px; }
+.pair .money input { padding-right: 38px; }
+.x { color: var(--muted); }
+.siren { display: grid; gap: 8px; padding: 12px; margin-bottom: 6px; border-radius: 10px; background: var(--surface-2); border: 1px dashed var(--border); }
 .siren-line { display: flex; flex-wrap: wrap; gap: 8px; }
-.siren-line input { flex: 1 1 180px; width: auto; background: var(--bg); }
-.siren textarea { background: var(--bg); }
-.btn { display: inline-flex; align-items: center; height: 42px; padding: 0 14px; border-radius: 8px; font-weight: 600; font-size: 14px;
+.siren-line input { flex: 1 1 200px; width: auto; background: var(--bg); text-align: left; }
+.btn { display: inline-flex; align-items: center; height: 40px; padding: 0 14px; border-radius: 8px; font-weight: 600; font-size: 14px;
   text-decoration: none; background: var(--fg); color: var(--bg); border: 1px solid var(--fg); }
 .btn.ghost { background: transparent; color: var(--fg); border-color: var(--border); }
 .btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
-.steps { margin: 0; padding-left: 20px; font-size: 13px; color: var(--muted); display: grid; gap: 2px; }
 .siren-msg { font-size: 13px; display: grid; gap: 4px; }
 .siren-msg.ok { color: var(--ok); } .siren-msg.err { color: var(--ko); }
 .siren-msg ul { margin: 0; padding-left: 18px; color: var(--muted); }
-.example { display: inline-flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--warn); }
 .results { display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
 @media (max-width: 860px) { .results { position: static; } }
 .aide { display: grid; gap: 10px; border-left: 3px solid var(--border); }
@@ -121,44 +124,38 @@ pre { white-space: pre-wrap; word-break: break-word; font: 12.5px/1.5 var(--mono
   </header>
 
   <div class="cols">
-    <section class="box" aria-labelledby="t-q">
-      <h2 id="t-q">Votre entreprise et votre projet</h2>
-      <p class="example" id="example-flag">Exemple pré-rempli : remplacez par vos réponses.</p>
-      <form id="f" novalidate>
-        <fieldset class="siren">
-          <legend>Remplir avec le numéro SIREN</legend>
+    <form id="f" class="left" novalidate>
+      <section class="box">
+        <div class="box-head"><h2>1 · Votre entreprise</h2><span class="badge" id="example-flag">Exemple</span></div>
+        <div class="siren">
           <div class="siren-line">
-            <input id="siren" type="text" inputmode="numeric" maxlength="17" placeholder="SIREN (9 chiffres) ou SIRET (14)" aria-label="Numéro SIREN ou SIRET">
-            <a class="btn ghost" id="lien-fiche" href="https://annuaire-entreprises.data.gouv.fr" target="_blank" rel="noopener" aria-disabled="true">Voir la fiche officielle</a>
+            <input id="siren" type="text" inputmode="numeric" maxlength="17" placeholder="Numéro SIREN ou SIRET" aria-label="Numéro SIREN ou SIRET">
+            <a class="btn ghost" id="lien-fiche" href="https://annuaire-entreprises.data.gouv.fr" target="_blank" rel="noopener" aria-disabled="true">Fiche officielle</a>
           </div>
-          <p class="hint">Les réponses sur l'entreprise se remplissent dès que le numéro est complet, à partir des données publiques de l'État.</p>
+          <p class="hint">Le numéro remplit les réponses ci-dessous avec les données publiques de l'État.</p>
           <div id="siren-msg" class="siren-msg" role="status" hidden></div>
-        </fieldset>
-        <fieldset>
-          <legend>L'entreprise</legend>
-          <div class="row">
-            <label for="idf"><span class="lt">Où est-elle établie ?</span><select id="idf"><option value="oui">Île-de-France</option><option value="non">Autre région</option><option value="nsp">Je ne sais pas</option></select><span class="hint"></span></label>
-            <label for="salaries"><span class="lt">Nombre de salariés</span><input id="salaries" type="number" min="0" step="1" inputmode="numeric"><span class="hint">Seules les personnes en contrat de travail comptent. Vide = je ne sais pas.</span></label>
-            <label for="ca"><span class="lt">Chiffre d'affaires du dernier exercice (€ HT)</span><input id="ca" type="number" min="0" step="1000" inputmode="numeric"><span class="hint">Vide = je ne sais pas.</span></label>
-            <label for="anciennete"><span class="lt">Ancienneté</span><select id="anciennete"><option value="0.5">Moins d'un an</option><option value="2">1 à 3 ans</option><option value="4">Plus de 3 ans</option><option value="nsp">Je ne sais pas</option></select><span class="hint"></span></label>
-            <label for="exercice"><span class="lt">Un premier exercice comptable est-il clos ?</span><select id="exercice"><option value="oui">Oui</option><option value="non">Non</option><option value="nsp">Je ne sais pas</option></select><span class="hint"></span></label>
-            <label for="secteur"><span class="lt">Secteur d'activité</span><select id="secteur"></select><span class="hint"></span></label>
-            <label for="aides3ans"><span class="lt">Aides publiques reçues ces 3 dernières années</span><select id="aides3ans"><option value="0">Aucune, ou moins de 300 000 €</option><option value="310000">Plus de 300 000 €</option><option value="nsp">Je ne sais pas</option></select><span class="hint"></span></label>
-          </div>
-        </fieldset>
-        <fieldset>
-          <legend>Le projet, par type de dépense (€ HT)</legend>
-          <div class="row">
-            <label for="dev"><span class="lt">Développement livré</span><input id="dev" type="number" min="0" step="500" inputmode="numeric"><span class="hint">Site, logiciel, outil, bot ou automatisation facturés une fois.</span></label>
-            <label for="abonnement"><span class="lt">Abonnements et maintenance</span><input id="abonnement" type="number" min="0" step="100" inputmode="numeric"><span class="hint">Total sur la durée du projet.</span></label>
-            <label for="conseilJours"><span class="lt">Conseil : nombre de jours</span><input id="conseilJours" type="number" min="0" step="0.5" inputmode="decimal"><span class="hint"></span></label>
-            <label for="conseilTarif"><span class="lt">Conseil : prix par jour</span><input id="conseilTarif" type="number" min="0" step="50" inputmode="numeric"><span class="hint"></span></label>
-            <label for="formation"><span class="lt">Formation</span><input id="formation" type="number" min="0" step="100" inputmode="numeric"><span class="hint"></span></label>
-            <label for="signe"><span class="lt">Montant déjà signé</span><input id="signe" type="number" min="0" step="500" inputmode="numeric"><span class="hint">Devis signés ou acomptes versés.</span></label>
-          </div>
-        </fieldset>
-      </form>
-    </section>
+        </div>
+        <div class="qs">
+            <div class="q"><label for="idf">Lieu</label><div class="ctl"><select id="idf"><option value="oui">Île-de-France</option><option value="non">Autre région</option><option value="nsp">Je ne sais pas</option></select></div></div>
+            <div class="q"><label for="salaries">Salariés<span class="hint">Personnes en contrat de travail</span></label><div class="ctl"><input id="salaries" type="number" min="0" step="1" inputmode="numeric" placeholder="Je ne sais pas"></div></div>
+            <div class="q"><label for="ca">Chiffre d'affaires<span class="hint">Dernier exercice, hors taxes</span></label><div class="ctl"><div class="money"><input id="ca" type="number" placeholder="Je ne sais pas" min="0" step="1000" inputmode="numeric"><span>€</span></div></div></div>
+            <div class="q"><label for="anciennete">Ancienneté</label><div class="ctl"><select id="anciennete"><option value="0.5">Moins d'un an</option><option value="2">1 à 3 ans</option><option value="4">Plus de 3 ans</option><option value="nsp">Je ne sais pas</option></select></div></div>
+            <div class="q"><label for="exercice">Exercice comptable clos</label><div class="ctl"><select id="exercice"><option value="oui">Oui</option><option value="non">Non</option><option value="nsp">Je ne sais pas</option></select></div></div>
+            <div class="q"><label for="secteur">Secteur</label><div class="ctl"><select id="secteur"></select></div></div>
+            <div class="q"><label for="aides3ans">Aides publiques reçues<span class="hint">Sur les 3 dernières années</span></label><div class="ctl"><select id="aides3ans"><option value="0">Moins de 300 000 €</option><option value="310000">Plus de 300 000 €</option><option value="nsp">Je ne sais pas</option></select></div></div>
+        </div>
+      </section>
+      <section class="box">
+        <div class="box-head"><h2>2 · Votre projet</h2><span class="hint">Montants hors taxes</span></div>
+        <div class="qs">
+            <div class="q"><label for="dev">Développement livré<span class="hint">Site, logiciel, outil, bot, facturé une fois</span></label><div class="ctl"><div class="money"><input id="dev" type="number" min="0" step="500" inputmode="numeric"><span>€</span></div></div></div>
+            <div class="q"><label for="conseilJours">Conseil<span class="hint">Nombre de jours × prix par jour</span></label><div class="ctl"><div class="pair"><div class="money"><input id="conseilJours" type="number" min="0" step="0.5" inputmode="decimal" aria-label="Nombre de jours de conseil"><span>j</span></div><span class="x">×</span><div class="money"><input id="conseilTarif" type="number" min="0" step="50" inputmode="numeric" aria-label="Prix par jour de conseil"><span>€/j</span></div></div></div></div>
+            <div class="q"><label for="abonnement">Abonnements et maintenance<span class="hint">Total sur la durée du projet</span></label><div class="ctl"><div class="money"><input id="abonnement" type="number" min="0" step="100" inputmode="numeric"><span>€</span></div></div></div>
+            <div class="q"><label for="formation">Formation</label><div class="ctl"><div class="money"><input id="formation" type="number" min="0" step="100" inputmode="numeric"><span>€</span></div></div></div>
+            <div class="q"><label for="signe">Déjà signé<span class="hint">Devis signés ou acomptes versés</span></label><div class="ctl"><div class="money"><input id="signe" type="number" min="0" step="500" inputmode="numeric"><span>€</span></div></div></div>
+        </div>
+      </section>
+    </form>
 
     <section class="results" aria-labelledby="t-r" aria-live="polite">
       <div class="box">
